@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>E-Store System Architecture Guide</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; color: #333; max-width: 950px; margin: auto; }
+    h1, h2, h3 { color: #652482; }
+    .card { background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 6px; padding: 15px; margin: 15px 0; }
+    code { background: #eee; padding: 2px 5px; border-radius: 3px; font-size: 13px; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 14px; }
+    th { background-color: #652482; color: white; }
+  </style>
+</head>
+<body>
+
+  <h1>E-Store System Architecture Guide</h1>
+  <p><strong>Maintainer Reference:</strong> Modular Google Apps Script Backend & Web Frontend</p>
+
+  <h2>1. Modular File Breakdown & Responsibilities</h2>
+  <table>
+    <tr>
+      <th>File Name</th>
+      <th>Primary Responsibility</th>
+    </tr>
+    <tr>
+      <td><code>Constants.gs</code></td>
+      <td>Centralized configuration flags, sheet names, folder IDs, column index mappings, and status constants.</td>
+    </tr>
+    <tr>
+      <td><code>Code.gs</code></td>
+      <td>Web app entry point (<code>doGet</code>), custom spreadsheet menu creation (<code>onOpen</code>), and utility/test scripts.</td>
+    </tr>
+    <tr>
+      <td><code>Admin.gs</code></td>
+      <td>Server-side modal trigger functions and action handlers called from admin interfaces via <code>google.script.run</code>.</td>
+    </tr>
+    <tr>
+      <td><code>Estore.gs</code></td>
+      <td>Customer storefront catalog fetching (<code>getBooks</code>) and end-to-end checkout processing (<code>processOrder</code>).</td>
+    </tr>
+    <tr>
+      <td><code>EbookServices.gs</code></td>
+      <td>Google Doc template copying, placeholder replacement (body/footer), PDF conversion, and URL map serialization.</td>
+    </tr>
+    <tr>
+      <td><code>EmailServices.gs</code></td>
+      <td>Dynamic notification recipient configuration lookup, receipt building, and customer/admin email dispatch.</td>
+    </tr>
+    <tr>
+      <td><code>Utilities.gs</code></td>
+      <td>Shared helper functions like sheet getters and order detail parsers for admin modals.</td>
+    </tr>
+  </table>
+
+  <h2>2. Customer User Flow (End-to-End Checkout)</h2>
+  <div class="card">
+    <ol>
+      <li><strong>Catalog Browsing:</strong> The user opens the storefront (`Index.html`). The book catalog is loaded dynamically from the "Book List" sheet, displaying titles, prices, descriptions, and cover images.</li>
+      <li><strong>Cart Selection:</strong> The user selects the desired quantities for their books and proceeds to the shipping/checkout phase.</li>
+      <li><strong>Fulfillment Options & Rules:</strong>
+        <ul>
+          <li><strong>Digital-Only Orders:</strong> If the cart contains only eBooks, the system restricts fulfillment exclusively to <em>Digital Delivery</em>.</li>
+          <li><strong>Physical / Mixed Orders:</strong> If physical books are present, the user can choose between <em>Self-Collect</em> or <em>Courier</em> (restricted to Malaysia only, with a flat rate applied).</li>
+        </ul>
+      </li>
+      <li><strong>Shipping Details:</strong> If courier delivery is chosen, the user enters their delivery address, postcode, town, state, and country.</li>
+      <li><strong>Payment Process:</strong> The user proceeds to payment, scans the provided bank QR code, uploads their payment receipt file, and submits the order.</li>
+      <li><strong>Confirmation & Processing:</strong> Upon submission, an order ID (`ORD-XXXXXX`) is generated, the order is logged to the sheet with status <strong>Submitted</strong>, a confirmation email is dispatched to both the customer and admin, and order processing begins.</li>
+    </ol>
+  </div>
+
+  <h2>3. Administrator Capabilities & Management Actions</h2>
+  <div class="card">
+    <p>Admins manage orders directly via the custom <strong>"Order Management"</strong> menu integrated into the Google Sheet UI:</p>
+    <ul>
+      <li><strong>Verify Payment:</strong> Open the verification modal to inspect order rows, review payment statuses, and shift order statuses from <em>Submitted</em> to <strong>Processing</strong> (marking payments as <em>Verified</em>).</li>
+      <li><strong>Generate Watermarked PDFs:</strong> Manually trigger watermarked eBook generation for orders using master Google Doc templates, injecting buyer placeholders into both the body and footers, and saving downloadable PDF links.</li>
+      <li><strong>Update Courier Details:</strong> Record and update physical shipping tracking metadata (shipping date, courier company name, and tracking number) for physical/mixed fulfillment orders.</li>
+      <li><strong>Fulfill eBooks (Send Email):</strong> Review digital items, choose whether to reuse cached watermarked PDFs or generate fresh ones, save links to the sheet, and automatically email secure download links to the buyer.</li>
+      <li><strong>Complete Order:</strong> Review final order states and stamp the order status as <strong>Completed</strong> to close out the transaction lifecycle.</li>
+    </ul>
+  </div>
+
+  <h2>4. Order Lifecycle & Status Workflow</h2>
+  <div class="card">
+    <ol>
+      <li><strong>Submission:</strong> Customer submits checkout via <code>Index.html</code>. <code>Estore.gs:processOrder()</code> generates an <code>ORD-XXXXXX</code> ID, uploads payment proof to Drive, serializes item details into <code>RawOrderItemData</code>, and sets order status to <strong>Submitted</strong>.</li>
+      <li><strong>Payment Verification:</strong> Admin uses the <strong>Verify Payment</strong> modal. <code>Admin.gs:executeVerifyPayment()</code> shifts the order status to <strong>Processing</strong> and payment status to <strong>Verified</strong>.</li>
+      <li><strong>Fulfillment Tracks (Decoupled):</strong>
+        <ul>
+          <li><strong>Digital (eBooks):</strong> Admin triggers <strong>Fulfill eBooks</strong>. System checks/generates watermarked PDFs via <code>EbookServices.gs</code>, saves download links to column 11, and emails links to the buyer.</li>
+          <li><strong>Physical (Courier):</strong> Admin updates tracking details via <strong>Update Courier Details</strong>, recording date, company, and tracking number independently.</li>
+        </ul>
+      </li>
+      <li><strong>Completion:</strong> Admin marks the order as <strong>Completed</strong> using the <strong>Complete Order</strong> modal.</li>
+    </ol>
+  </div>
+
+</body>
+</html>

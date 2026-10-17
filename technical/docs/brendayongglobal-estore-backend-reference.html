@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Backend API Reference & JSDocs</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; color: #333; max-width: 950px; margin: auto; }
+    h1, h2 { color: #652482; }
+    .func-card { background: #fdfcff; border-left: 4px solid #652482; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px; margin: 15px 0; }
+    code { background: #eee; padding: 2px 5px; border-radius: 3px; font-size: 13px; }
+    pre { background: #1e1e1e; color: #d4d4d4; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <h1>Backend API Reference & JSDocs</h1>
+  <p>Complete documentation of all server-side functions across modular script files.</p>
+
+  <h2>Code.gs</h2>
+  <div class="func-card">
+    <h3>doGet(e)</h3>
+    <pre>/**
+ * Serves the main web storefront interface (Index.html).
+ * @param {Object} e - Event object containing request parameters.
+ * @return {HtmlOutput} Evaluated HTML output with template variables.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>onOpen()</h3>
+    <pre>/**
+ * Creates the custom "Order Management" menu items inside the Google Sheet UI on startup.
+ */</pre>
+  </div>
+
+  <h2>Admin.gs</h2>
+  <div class="func-card">
+    <h3>executeVerifyPayment(rowNum)</h3>
+    <pre>/**
+ * Updates an order's status to Processing and payment status to Verified.
+ * @param {number} rowNum - The Google Sheet row number.
+ * @return {Object} Result object with success boolean and optional error message.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>executeUpdateCourier(rowNum, courierDetails)</h3>
+    <pre>/**
+ * Writes physical shipping tracking data into the courier details column.
+ * @param {number} rowNum - The Google Sheet row number.
+ * @param {Object} courierDetails - Object containing date, company, and trackingNumber.
+ * @return {Object} Success state and message.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>checkExistingEBookFulfillment(rowNum)</h3>
+    <pre>/**
+ * Inspects a row for existing digital fulfillment links and digital items.
+ * @param {number} rowNum - The Google Sheet row number.
+ * @return {Object} Buyer details, ebook titles list, and existing URLs flag.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>executeFulfillEbookWithPreference(rowNum, useExistingPdf)</h3>
+    <pre>/**
+ * Reuses or regenerates watermarked ebook PDFs and emails download links to the buyer.
+ * @param {number} rowNum - The Google Sheet row number.
+ * @param {boolean} useExistingPdf - True to reuse cached files, false to regenerate.
+ * @return {Object} Operation success state and status message.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>executeCompleteOrder(rowNum, courierDetails)</h3>
+    <pre>/**
+ * Marks a specified order row as Completed.
+ * @param {number} rowNum - The Google Sheet row number.
+ * @return {Object} Success flag and confirmation message.
+ */</pre>
+  </div>
+
+  <h2>Estore.gs</h2>
+  <div class="func-card">
+    <h3>getBooks()</h3>
+    <pre>/**
+ * Retrieves the book catalog from the "Book List" sheet for frontend rendering.
+ * @return {Array&lt;Object&gt;} Array of book item objects.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>processOrder(data)</h3>
+    <pre>/**
+ * Handles customer checkout: uploads receipts, serializes item data, logs to Orders sheet, and triggers notification emails.
+ * @param {Object} data - Customer payload including contact info, cart items, fulfillment type, and payment receipt file.
+ * @return {Object} Success status and generated Order ID.
+ */</pre>
+  </div>
+
+  <h2>EbookServices.gs</h2>
+  <div class="func-card">
+    <h3>generateWatermarkedEbook(masterDocId, targetFolderId, orderId, title, buyerName, buyerEmail)</h3>
+    <pre>/**
+ * Copies a master Google Doc template, substitutes buyer placeholders in body and footers, exports as a watermarked PDF, and saves to Drive.
+ * @param {string} masterDocId - Google Doc template file ID.
+ * @param {string} targetFolderId - Google Drive folder ID for output storage.
+ * @param {string} orderId - Order identifier string.
+ * @param {string} title - Book title.
+ * @param {string} buyerName - Customer full name.
+ * @param {string} buyerEmail - Customer email address.
+ * @return {string} Public web URL of the newly created watermarked PDF file.
+ */</pre>
+  </div>
+  <div class="func-card">
+    <h3>convertEBookUrlMapToString(ebooksObj)</h3>
+    <pre>/**
+ * Serializes an ebook map object into a clean multi-line cell string.
+ * @param {Object} ebooksObj - Map of book IDs to titles and URLs.
+ * @return {string} Formatted string representation.
+ */</pre>
+  </div>
+
+  <h2>EmailServices.gs</h2>
+  <div class="func-card">
+    <h3>sendOrderNotification(orderId, data, fullAddress, itemsSummary, receiptUrl)</h3>
+    <pre>/**
+ * Dynamically retrieves admin notification emails from Configuration sheet, compiles a styled HTML receipt, and sends via MailApp.
+ * @param {string} orderId - Order identifier.
+ * @param {Object} data - Order payload data.
+ * @param {string} fullAddress - Formatted delivery address.
+ * @param {string} itemsSummary - Item list text summary.
+ * @param {string} receiptUrl - Payment receipt link or placeholder.
+ */</pre>
+  </div>
+
+  <h2>Utilities.gs</h2>
+  <div class="func-card">
+    <h3>getOrderDetailsByRow(rowNum)</h3>
+    <pre>/**
+ * Fetches and parses order row attributes for modal preview interfaces.
+ * @param {number} rowNum - The Google Sheet row number.
+ * @return {Object} Structured order parameters and filtered item collections.
+ */</pre>
+  </div>
+
+</body>
+</html>
